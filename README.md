@@ -24,3 +24,7 @@ Finally, it loads the data into Auth0 using their
 (If our production data turns out to be larger than the 500KB limit,
 then this will also handle splitting it into smaller chunks and submitting
 multiple import jobs.)
+
+## Usage
+
+Copy `.env.template` to `.env`, set the values, and run `npm run start`.
