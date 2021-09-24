@@ -1,6 +1,8 @@
+import { isValidPhoneNumber, parsePhoneNumberFromString } from 'libphonenumber-js/max';
+
 import { logger } from './log';
 
-import type { PermanentUserCredentials } from './load';
+import type { PermanentUserCredentials } from './extract';
 
 interface EmailMFA {
   email: {
@@ -35,9 +37,9 @@ const permanentToAuth0 = (user: PermanentUserCredentials): Auth0UserCredentials 
         value: user.email,
       },
     }] : []),
-    ...((user.phoneVerified === 1 && !!user.phone) ? [{
+    ...((user.phoneVerified === 1 && !!user.phone && isValidPhoneNumber(user.phone, 'US')) ? [{
       phone: {
-        value: user.phone, // TODO
+        value: parsePhoneNumberFromString(user.phone, 'US')!.number as string,
       },
     }] : []),
   ],
