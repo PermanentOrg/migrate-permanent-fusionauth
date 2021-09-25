@@ -20,10 +20,10 @@ const extract  = async (databaseUrl: string): Promise<PermanentUserCredentials[]
   const adapter = puresql.adapters.mysql(connection);
 
   const version = await queries.version({}, adapter);
-  logger.info(`Connected to MySQL ${version[0]['version()']} database server at ${connection.config.host}`);
+  logger.debug(`Connected to MySQL ${version[0]['version()']} database server at ${connection.config.host}`);
 
   const results = await queries.userCredentials({}, adapter);
-  logger.info(`Loaded ${results.length} user credentials`);
+  logger.verbose(`Loaded ${results.length} user credentials`);
 
   await connection.end();
   return results;

@@ -1,6 +1,7 @@
 import './env';
 
 import { promises as fs } from 'fs';
+import { isValidPhoneNumber } from 'libphonenumber-js/max';
 import { requireEnv } from 'require-env-variable';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
@@ -13,6 +14,31 @@ const { DATABASE_URL } = requireEnv('DATABASE_URL');
 
 const main = async (argv: string[]) => yargs(hideBin(argv))
   .version(false)
+  .command(
+    'checkPhone',
+    'Look at the extracted phone numbers, and report on how many are valid',
+    (y) => y.option('list-invalid-users', { type: 'boolean' }),
+    async (args) => {
+      logger.info('Reporting on phone numbers');
+      const data = await extract(DATABASE_URL);
+      const hasPhone = data.filter(user => user.phone !== null);
+      logger.info(`${hasPhone.length} users have a phone number set`);
+      const isVerified = hasPhone.filter(user => !!user.phoneVerified);
+      logger.info(`${isVerified.length} users have a verified phone number`);
+      const isValid = isVerified.filter(user => isValidPhoneNumber(user.phone as string, 'US'));
+      logger.info(`${isValid.length} users have a valid phone number`);
+      const isInvalid = isVerified.filter(user => !isValidPhoneNumber(user.phone as string, 'US'));
+      logger.info(`${isInvalid.length} users have an invalid phone number`);
+      if (isInvalid.length > 0) {
+        if (args['list-invalid-users']) {
+          logger.info('Users with an invalid phone number:');
+          isInvalid.forEach((user) => logger.info(`${user.name} <${user.email}>: ${user.phone}`));
+        } else {
+          logger.info('Call with --list-invalid-users to see full list');
+        }
+      }
+    }
+  )
   .command(
     'save <filename>',
     'Extract & transform the data, then write it to a file',
@@ -29,7 +55,7 @@ const main = async (argv: string[]) => yargs(hideBin(argv))
   .parse();
 
 main(process.argv)
-  .then(() => logger.info('done'))
+  .then(() => logger.verbose('done'))
   .catch((err) => {
     logger.error(err);
     process.exit(1);
