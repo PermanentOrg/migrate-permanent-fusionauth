@@ -7,6 +7,7 @@ import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { extract } from './extract';
+import { load } from './load';
 import { logger } from './log';
 import { transform } from './transform';
 
@@ -50,6 +51,15 @@ const main = async (argv: string[]) => yargs(hideBin(argv))
       await fs.writeFile(filename as string, JSON.stringify(data, null, 2), 'utf8');
       logger.info(`Wrote ${data.length} users to ${filename}`);
     },
+  )
+  .command(
+    'migrate',
+    'Extract & transform the data, then load it into Auth0',
+    () => {},
+    () => extract(DATABASE_URL)
+      .then(transform)
+      .then(load)
+      .catch((err: unknown) => { logger.error('Error migrating credentials:', { err }) })
   )
   .demandCommand()
   .parse();
