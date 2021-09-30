@@ -43,7 +43,7 @@ const loadBatch = async (
   let statusRequest: AxiosResponse;
   let { status } = jobRequest.data;
   do {
-    await new Promise(r => setTimeout(r, 5000));
+    await new Promise(r => setTimeout(r, 15000));
     statusRequest = await client.get(
       `https://${AUTH0_DOMAIN}/api/v2/jobs/${id}`,
       {
