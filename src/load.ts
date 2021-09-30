@@ -95,13 +95,12 @@ const load = async (users: Auth0UserCredentials[]): Promise<void> => {
 
   // This is stupid and simple. Rather than write code to split effectively,
   // just always do four batches of about 1k users each.
-  // Auth0 seems to be fine with empty import jobs, anyway.
   const batches = [
     users.slice(0, 1000),
     users.slice(1000, 2000),
     users.slice(2000, 3000),
     users.slice(3000)
-  ];
+  ].filter(b => b.length > 0);
   if (batches.map(b => JSON.stringify(b).length).some((l) => l > AUTH0_IMPORT_SIZE_LIMIT)) {
     throw new Error('Batch too large!');
   }
