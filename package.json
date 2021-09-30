@@ -4,6 +4,9 @@
   "description": "ETL script to transfer user credentials from Permanent to Auth0",
   "main": "index.js",
   "scripts": {
+    "checkPhone": "ts-node --files src/index.ts checkPhone",
+    "migrate": "ts-node --files src/index.ts migrate",
+    "save": "ts-node --files src/index.ts save users.json",
     "start": "ts-node --files src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
