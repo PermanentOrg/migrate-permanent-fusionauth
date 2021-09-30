@@ -57,8 +57,11 @@ const loadBatch = async (
 
   const { summary } = statusRequest.data;
   logger.info(`User import job ${id} ${status}`, { summary });
+  if (summary.failed > 0) {
+    logger.warn(`User import job ${id} had ${summary.failed} failures`);
+  }
 
-  if (status === 'failed') {
+  if (status === 'failed' || summary.failed > 0) {
     const failRequest = await client.get(
       `https://${AUTH0_DOMAIN}/api/v2/jobs/${id}/errors`,
       {
