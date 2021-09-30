@@ -22,8 +22,29 @@ export interface Auth0UserCredentials {
   name: string;
   password_hash: string;
   password_set_date: string;
-  mfa_factors: (EmailMFA | PhoneMFA)[];
+  mfa_factors?: (EmailMFA | PhoneMFA)[];
 };
+
+const hasPhoneMfa = (user: PermanentUserCredentials): boolean => (
+  user.phoneVerified === 1 && !!user.phone && isValidPhoneNumber(user.phone, 'US')
+);
+
+const getMfaFactors = (user: PermanentUserCredentials) => (
+  (user.emailVerified === 1 || hasPhoneMfa(user)) ? {
+    mfa_factors: [
+      ...(user.emailVerified === 1 ? [{
+        email: {
+          value: user.email,
+        },
+      }] : []),
+      ...(hasPhoneMfa(user) && !!user.phone ? [{
+        phone: {
+          value: parsePhoneNumberFromString(user.phone, 'US')!.number as string,
+        },
+      }] : []),
+    ],
+  } : {}
+);
 
 const permanentToAuth0 = (user: PermanentUserCredentials): Auth0UserCredentials => ({
   email: user.email,
@@ -31,18 +52,7 @@ const permanentToAuth0 = (user: PermanentUserCredentials): Auth0UserCredentials 
   name: user.name,
   password_hash: user.passwordHash.replace('$2y$', '$2a$'),
   password_set_date: user.passwordDate.toISOString(),
-  mfa_factors: [
-    ...(user.emailVerified === 1 ? [{
-      email: {
-        value: user.email,
-      },
-    }] : []),
-    ...((user.phoneVerified === 1 && !!user.phone && isValidPhoneNumber(user.phone, 'US')) ? [{
-      phone: {
-        value: parsePhoneNumberFromString(user.phone, 'US')!.number as string,
-      },
-    }] : []),
-  ],
+  ...getMfaFactors(user),
 });
 
 const transform = (
