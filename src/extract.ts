@@ -17,7 +17,10 @@ export interface PermanentUserCredentials {
 };
 
 const extract  = async (databaseUrl: string): Promise<PermanentUserCredentials[]> => {
-  const connection = mysql.createConnection(databaseUrl);
+  const connection = mysql.createConnection({
+    uri: databaseUrl,
+    timezone: 'Z',
+  });
   const adapter = puresql.adapters.mysql(connection);
 
   const version = await queries.version({}, adapter);
