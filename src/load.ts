@@ -9,6 +9,7 @@ import type { FusionAuthUserCredentials } from './transform';
 const loadBatch = async (
   client: AxiosInstance,
   IDP_MGMT_API_TOKEN: string,
+  IDP_TENANT_ID: string,
   IMPORT_URL: string,
   users: FusionAuthUserCredentials[],
 ): Promise<void> => {
@@ -19,6 +20,7 @@ const loadBatch = async (
       {
         headers: {
           authorization: IDP_MGMT_API_TOKEN,
+          'X-FusionAuth-TenantId': IDP_TENANT_ID,
         },
       },
     );
@@ -28,8 +30,9 @@ const loadBatch = async (
 };
 
 const load = async (users: FusionAuthUserCredentials[]): Promise<void> => {
-  const { IDP_MGMT_API_TOKEN, IMPORT_URL } = requireEnv(
+  const { IDP_MGMT_API_TOKEN, IDP_TENANT_ID, IMPORT_URL } = requireEnv(
     'IDP_MGMT_API_TOKEN',
+    'IDP_TENANT_ID',
     'IMPORT_URL',
   );
   logger.info(`Loading ${users.length} users into ${IMPORT_URL}`);
@@ -57,7 +60,7 @@ const load = async (users: FusionAuthUserCredentials[]): Promise<void> => {
   for (const batch of batches) {
     index++;
     logger.verbose(`Loading batch ${index} of ${batch.length} users`);
-    await loadBatch(client, IDP_MGMT_API_TOKEN, IMPORT_URL, batch);
+    await loadBatch(client, IDP_MGMT_API_TOKEN, IDP_TENANT_ID, IMPORT_URL, batch);
     logger.verbose(`Finished loading batch ${index} of ${batch.length} users`);
   };
   logger.info(`Loaded ${users.length} users into ${IMPORT_URL}`);
