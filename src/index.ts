@@ -48,13 +48,13 @@ const main = async (argv: string[]) => yargs(hideBin(argv))
     }).normalize('filename'),
     async ({ filename }) => {
       const data = await extract(DATABASE_URL).then(transform);
-      await fs.writeFile(filename as string, JSON.stringify(data, null, 2), 'utf8');
+      await fs.writeFile(filename as string, JSON.stringify({ users: data }, null, 2), 'utf8');
       logger.info(`Wrote ${data.length} users to ${filename}`);
     },
   )
   .command(
     'migrate',
-    'Extract & transform the data, then load it into Auth0',
+    'Extract & transform the data, then load it into FusionAuth',
     () => {},
     () => extract(DATABASE_URL)
       .then(transform)

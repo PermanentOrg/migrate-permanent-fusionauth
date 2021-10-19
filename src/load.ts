@@ -1,86 +1,38 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosResponse } from 'axios';
 import { requestLogger, responseLogger } from 'axios-logger';
-import FormData from 'form-data';
 import { requireEnv } from 'require-env-variable';
 
 import { logger } from './log';
-import type { Auth0UserCredentials } from './transform';
-
-// https://auth0.com/docs/users/import-and-export-users/bulk-user-imports#create-users-json-file
-const AUTH0_IMPORT_SIZE_LIMIT = 500 * 1024;
-
-const buildForm = (connectionId: string, users: Auth0UserCredentials[]) => {
-  const formData = new FormData();
-  formData.append('connection_id', connectionId);
-  formData.append('users', JSON.stringify(users), {
-    contentType: 'text/json',
-    filename: 'users.json',
-  });
-  return formData;
-}
+import type { FusionAuthUserCredentials } from './transform';
 
 const loadBatch = async (
   client: AxiosInstance,
-  AUTH0_CONNECTION_ID: string,
-  AUTH0_DOMAIN: string,
-  AUTH0_MGMT_API_TOKEN: string,
-  users: Auth0UserCredentials[],
+  IDP_MGMT_API_TOKEN: string,
+  IMPORT_URL: string,
+  users: FusionAuthUserCredentials[],
 ): Promise<void> => {
-  const form = buildForm(AUTH0_CONNECTION_ID, users);
-  const jobRequest = await client.post(
-    `https://${AUTH0_DOMAIN}/api/v2/jobs/users-imports`,
-    form.getBuffer(),
-    {
-      headers: {
-        ...form.getHeaders(),
-        authorization: `Bearer ${AUTH0_MGMT_API_TOKEN}`,
-      },
-    },
-  );
-  const { id } = jobRequest.data;
-  logger.verbose(`User import job ${id} submitted`);
-  let statusRequest: AxiosResponse;
-  let { status } = jobRequest.data;
-  do {
-    await new Promise(r => setTimeout(r, 15000));
-    statusRequest = await client.get(
-      `https://${AUTH0_DOMAIN}/api/v2/jobs/${id}`,
+  try {
+    await client.post(
+      IMPORT_URL,
+      { users },
       {
         headers: {
-          authorization: `Bearer ${AUTH0_MGMT_API_TOKEN}`,
+          authorization: IDP_MGMT_API_TOKEN,
         },
       },
     );
-    ({ status } = statusRequest.data);
-  } while (['pending', 'processing'].includes(status));
-
-  const { summary } = statusRequest.data;
-  logger.info(`User import job ${id} ${status}`, { summary });
-  if (summary.failed > 0) {
-    logger.warn(`User import job ${id} had ${summary.failed} failures`);
-  }
-
-  if (status === 'failed' || summary.failed > 0) {
-    const failRequest = await client.get(
-      `https://${AUTH0_DOMAIN}/api/v2/jobs/${id}/errors`,
-      {
-        headers: {
-          authorization: `Bearer ${AUTH0_MGMT_API_TOKEN}`,
-        },
-      },
-    );
-    logger.warn(`User import job ${id} errors:`, failRequest.data);
+  } catch (err: unknown) {
+    logger.warn('Error importing:', err);
   }
 };
 
-const load = async (users: Auth0UserCredentials[]): Promise<void> => {
-  const { AUTH0_CONNECTION_ID, AUTH0_DOMAIN, AUTH0_MGMT_API_TOKEN } = requireEnv(
-    'AUTH0_CONNECTION_ID',
-    'AUTH0_DOMAIN',
-    'AUTH0_MGMT_API_TOKEN',
+const load = async (users: FusionAuthUserCredentials[]): Promise<void> => {
+  const { IDP_MGMT_API_TOKEN, IMPORT_URL } = requireEnv(
+    'IDP_MGMT_API_TOKEN',
+    'IMPORT_URL',
   );
-  logger.info(`Loading ${users.length} users into ${AUTH0_DOMAIN}`);
+  logger.info(`Loading ${users.length} users into ${IMPORT_URL}`);
 
   const client = axios.create();
   client.interceptors.request.use((request) => requestLogger(request, {
@@ -101,17 +53,14 @@ const load = async (users: Auth0UserCredentials[]): Promise<void> => {
     users.slice(2000, 3000),
     users.slice(3000)
   ].filter(b => b.length > 0);
-  if (batches.map(b => JSON.stringify(b).length).some((l) => l > AUTH0_IMPORT_SIZE_LIMIT)) {
-    throw new Error('Batch too large!');
-  }
   let index = 0;
   for (const batch of batches) {
     index++;
     logger.verbose(`Loading batch ${index} of ${batch.length} users`);
-    await loadBatch(client, AUTH0_CONNECTION_ID, AUTH0_DOMAIN, AUTH0_MGMT_API_TOKEN, batch);
+    await loadBatch(client, IDP_MGMT_API_TOKEN, IMPORT_URL, batch);
     logger.verbose(`Finished loading batch ${index} of ${batch.length} users`);
   };
-  logger.info(`Loaded ${users.length} users into ${AUTH0_DOMAIN}`);
+  logger.info(`Loaded ${users.length} users into ${IMPORT_URL}`);
 };
 
 export { load };
