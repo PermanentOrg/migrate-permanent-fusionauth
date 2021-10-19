@@ -28,12 +28,16 @@ export interface FusionAuthUserCredentials {
   };
 };
 
-const hasPhoneMfa = (user: PermanentUserCredentials): boolean => (
+const hasPhone = (user: PermanentUserCredentials): boolean => (
   user.phoneVerified === 1 && !!user.phone && isValidPhoneNumber(user.phone, 'US')
 );
 
+const normalizePhoneNumber = (phoneNumber: string): string => (
+  parsePhoneNumberFromString(phoneNumber, 'US')!.number as string
+);
+
 const getMfaFactors = (user: PermanentUserCredentials) => (
-  (user.emailVerified === 1 || hasPhoneMfa(user)) ? {
+  (user.emailVerified === 1 || hasPhone(user)) ? {
     twoFactorEnabled: true,
     twoFactor: {
       methods: [
@@ -41,9 +45,9 @@ const getMfaFactors = (user: PermanentUserCredentials) => (
           method: 'email',
           email: user.email,
         }] : []),
-        ...(hasPhoneMfa(user) && !!user.phone ? [{
+        ...(hasPhone(user) && !!user.phone ? [{
           method: 'sms',
-          mobilePhone: parsePhoneNumberFromString(user.phone, 'US')!.number as string,
+          mobilePhone: normalizePhoneNumber(user.phone),
         }] : []),
       ]
     },
@@ -59,6 +63,10 @@ const passwordToFusionAuth = (hash: string) => ({
   password: hash.substring(29),
 });
 
+const getPhone = (user: PermanentUserCredentials) => (
+  hasPhone(user) ? { mobilePhone: normalizePhoneNumber(user.phone as string) } : {}
+);
+
 const permanentToFusionAuth = (user: PermanentUserCredentials): FusionAuthUserCredentials => ({
   active: true,
   email: user.email,
@@ -66,6 +74,7 @@ const permanentToFusionAuth = (user: PermanentUserCredentials): FusionAuthUserCr
   fullName: user.name,
   insertInstant: user.accountDate.getTime(),
   passwordLastUpdateInstant: user.passwordDate.getTime(),
+  ...getPhone(user),
   ...passwordToFusionAuth(user.passwordHash),
   ...getMfaFactors(user),
 });
