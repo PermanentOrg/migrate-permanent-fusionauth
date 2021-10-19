@@ -1,7 +1,7 @@
 {
-  "name": "migrate-permanent-auth0",
+  "name": "migrate-permanent-fusionauth",
   "version": "1.0.0",
-  "description": "ETL script to transfer user credentials from Permanent to Auth0",
+  "description": "ETL script to transfer user credentials from Permanent to FusionAuth",
   "main": "index.js",
   "scripts": {
     "checkPhone": "ts-node --files src/index.ts checkPhone",
@@ -11,7 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "auth0",
+    "fusionauth",
     "permanent",
     "permanentorg",
     "etl",
