@@ -14,6 +14,7 @@ export interface PermanentUserCredentials {
   phone: string | null;
   phoneVerified: number;
   accountDate: Date;
+  lastLoginDate: Date | null;
 };
 
 const extract  = async (databaseUrl: string): Promise<PermanentUserCredentials[]> => {

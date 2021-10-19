@@ -67,6 +67,18 @@ const getPhone = (user: PermanentUserCredentials) => (
   hasPhone(user) ? { mobilePhone: normalizePhoneNumber(user.phone as string) } : {}
 );
 
+const getRegistrations = (user: PermanentUserCredentials) => (
+  user.lastLoginDate === null ? {} : {
+    registrations: [{
+      applicationId: process.env.IDP_APPLICATION_ID,
+      insertInstant: user.accountDate.getTime(),
+      lastLoginInstant: user.lastLoginDate.getTime(),
+      verified: true,
+    }],
+  }
+);
+
+
 const permanentToFusionAuth = (user: PermanentUserCredentials): FusionAuthUserCredentials => ({
   active: true,
   email: user.email,
@@ -77,6 +89,7 @@ const permanentToFusionAuth = (user: PermanentUserCredentials): FusionAuthUserCr
   ...getPhone(user),
   ...passwordToFusionAuth(user.passwordHash),
   ...getMfaFactors(user),
+  ...getRegistrations(user),
 });
 
 const transform = (

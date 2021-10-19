@@ -5,4 +5,5 @@ config();
 
 requireEnv(
   'DATABASE_URL',
+  'IDP_APPLICATION_ID',
 );
