@@ -9,7 +9,8 @@ SELECT
   account_password.updatedDT AS passwordDate,
   account_password.password AS passwordHash,
   account.primaryPhone AS phone,
-  COALESCE(account.phoneStatus = 'status.auth.verified', false) AS phoneVerified
+  COALESCE(account.phoneStatus = 'status.auth.verified', false) AS phoneVerified,
+  account.createdDT as accountDate
 FROM account
   INNER JOIN account_password USING (accountId)
 WHERE

@@ -19,6 +19,7 @@ export interface FusionAuthUserCredentials {
   email: string;
   verified: boolean;
   fullName: string;
+  insertInstant: number;
   passwordLastUpdateInstant: number;
   mobilePhone?: string;
   twoFactorEnabled: boolean;
@@ -63,6 +64,7 @@ const permanentToFusionAuth = (user: PermanentUserCredentials): FusionAuthUserCr
   email: user.email,
   verified: !!user.emailVerified,
   fullName: user.name,
+  insertInstant: user.accountDate.getTime(),
   passwordLastUpdateInstant: user.passwordDate.getTime(),
   ...passwordToFusionAuth(user.passwordHash),
   ...getMfaFactors(user),
